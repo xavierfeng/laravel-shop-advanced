@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 use PhpParser\Builder\Property;
+use Illuminate\Support\Arr;
 
 class Product extends Model
 {
@@ -63,4 +64,38 @@ class Product extends Model
                 return $properties->pluck('value')->all();
             });
     }
+
+    //将一条商品数据写入到 Elasticsearch，需要写一个方法把商品模型转成符合上述字段格式的数组
+    public function toESArray()
+    {
+        // 只取出需要的字段
+        $arr = Arr::only($this->toArray(),[
+            'id',
+            'type',
+            'title',
+            'category_id',
+            'long_title',
+            'on_sale',
+            'rating',
+            'sold_count',
+            'review_count',
+            'price',
+        ]);
+        // 如果商品有类目，则 category 字段为类目名数组，否则为空字符串
+        $arr['category'] = $this->category ? explode(' - ', $this->category->fullname) : '';
+        // 类目的 path 字段
+        $arr['category_path'] = $this->category ? $this->category->path : '';
+        // strip_tags 函数可以将 html 标签去除
+        $arr['description'] = strip_tags($this->description);
+        // 只取出需要的 SKU 字段
+        $arr['skus'] = $this->skus->map(function (ProductSku $sku) {
+           return Arr::only($sku->toArray(),['title', 'description', 'price']);
+        });
+        // 只取出需要的商品属性字段
+        $arr['properties'] = $this->properties->map(function (ProductProperty $property) {
+           return Arr::only($property->toArray(),['name','value']);
+        });
+
+        return $arr;
+}
 }
