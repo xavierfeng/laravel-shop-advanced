@@ -1,5 +1,8 @@
 <?php
-
+//把秒杀接口放在路由的最开头，是因为 Laravel 匹配路由是从上往下匹配的
+//遇到第一个满足条件的路由就返回，所以放在最开头可以节省掉很多匹配路由的资源消耗。
+//秒杀
+Route::post('seckill_orders', 'OrdersController@seckill')->name('seckill_orders.store');
 Route::redirect('/', '/products')->name('root');
 Route::get('products', 'ProductsController@index')->name('products.index');
 
@@ -38,8 +41,7 @@ Route::group(['middleware' => ['auth', 'verified']], function() {
 
     //众筹
     Route::post('crowdfunding_orders','OrdersController@crowdfunding')->name('crowdfunding_orders.store');
-    //秒杀
-    Route::post('seckill_orders', 'OrdersController@seckill')->name('seckill_orders.store');
+
 });
 Route::get('products/{product}', 'ProductsController@show')->name('products.show');
 Route::post('payment/alipay/notify', 'PaymentController@alipayNotify')->name('payment.alipay.notify');
